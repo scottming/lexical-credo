@@ -27,7 +27,7 @@ defmodule Lexical.Credo do
       exec = Credo.Execution.build(["--mute-exit-status", "--read-from-stdin", file])
       {:ok, %{files: %{excluded: excluded}}} = Credo.ConfigFile.read_or_default(exec, ".")
 
-      if Enum.any?(excluded, &String.match?(file, &1)) do
+      if Enum.any?(excluded, &safe_match?(file, &1)) do
         []
       else
         exec
@@ -38,4 +38,14 @@ defmodule Lexical.Credo do
       Process.group_leader(self(), original_gl)
     end
   end
+
+  defp safe_match?(file, %Regex{} = regex) do
+    String.match?(file, regex)
+  end
+
+  defp safe_match?(file, glob) when is_binary(glob) do
+    file in Path.wildcard(glob)
+  end
+
+  defp safe_match?(_, _), do: false
 end
